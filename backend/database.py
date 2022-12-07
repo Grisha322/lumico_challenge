@@ -1,0 +1,100 @@
+import mysql.connector
+from mysql.connector import cursor
+from vessel import Vessel
+import dbConstants as constants
+from datetime import datetime
+
+class Database:
+    def __init__(self) -> None:
+        self.__timestamp = None
+        self.__mydb = None
+
+    def __openConnection(self) -> cursor.MySQLCursor:
+        if not self.__isConnected():
+            self.__mydb = mysql.connector.connect(
+                host=constants.host, 
+                user=constants.user, 
+                password=constants.password, 
+                database=constants.database
+            )
+        
+        return self.__mydb.cursor()
+
+    def __closeConnection(self) -> None:
+        if not self.__isConnected():
+            return
+
+        self.__mydb.close()
+        self.__mydb = None
+
+    def __isConnected(self) -> bool:
+        return self.__mydb != None and self.__mydb.is_connected()
+
+    # Returns a list of vessels created/modified since the last update
+    def getVessels(self) -> list:
+        query = f"select * from {constants.vesselsTable} order by last_changed desc"
+        if(self.__timestamp == None):
+            query += ";"
+        else:
+            query += f" where {constants.vesselsTimestampColumn} > '{self.__timestamp}';"
+
+        result = self.__performQuery(query=query)
+        vessels = []
+        newTimestamp = None
+        for x in result:
+            vessel, t = self.__parseResult(x)
+            print(vessel)
+            vessels.append(vessel)
+            if newTimestamp == None:
+                newTimestamp = t
+        self.__timestamp = newTimestamp
+        return vessels
+
+    # Adds a new vessel into the database.
+    def addVessel(self, name: str, lat: float, long: float):
+        query = f"""insert into {constants.vesselsTable}
+            (
+                {constants.vesselsNameColumn}, 
+                {constants.vesselsLatColumn}, 
+                {constants.vesselsLongColumn}
+            ) values
+            ('
+                {name}', 
+                {lat:8.6f}, 
+                {long:9.6f}
+            );"""
+        
+        self.__performQuery(query=query, keepConnection=True)        
+            
+    def removeVessel(self, id: int):
+        query = f"delete from {constants.vesselsTable} where {constants.vesselsIdColumn} = {id};"
+        self.__performQuery(query=query, keepConnection=True)  
+
+    def editVessel(self, id: int, name: str, lat: float, long: float):
+        query = f"""update {constants.vesselsTable} 
+            set 
+                {constants.vesselsNameColumn} = {name}, 
+                {constants.vesselsLatColumn} = {lat}, 
+                {constants.vesselsLongColumn} = {long} 
+            where {constants.vesselsIdColumn} = {id};"""
+        
+        self.__performQuery(query=query, keepConnection=True) 
+
+    def __performQuery(self, query: str, keepConnection = False):
+        cursor = self.__openConnection()
+
+        cursor.execute(query)
+        result = cursor.fetchall()
+        if(keepConnection):
+            cursor.close()
+        else:
+            self.__closeConnection()
+        return result
+
+    def __parseResult(self, result: tuple) -> tuple:
+        id, name, lat, long, timestamp = result
+        return (Vessel(id, name, lat, long), timestamp)
+
+# Singleton object
+db = Database()
+

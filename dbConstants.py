@@ -1,0 +1,7 @@
+host = "localhost"
+user = "greg"
+password = "i1i3i5i7"
+database = "lumico_challenge"
+vesselsTable = "vessels"
+vesselsTimestampColumn = "last_changed"
+vesselsSelectStatement = f"select * from {vesselsTable} order by last_changed desc"
