@@ -24,6 +24,7 @@ class Database:
         if not self.__isConnected():
             return
 
+        self.__mydb.commit()
         self.__mydb.close()
         self.__mydb = None
 
@@ -32,22 +33,22 @@ class Database:
 
     # Returns a list of vessels created/modified since the last update
     def getVessels(self) -> list:
-        query = f"select * from {constants.vesselsTable} order by last_changed desc"
-        if(self.__timestamp == None):
-            query += ";"
-        else:
-            query += f" where {constants.vesselsTimestampColumn} > '{self.__timestamp}';"
+        query = f"select * from {constants.vesselsTable}"
+        if(self.__timestamp != None):
+            query += f" where {constants.vesselsTimestampColumn} > '{self.__timestamp}'"
+            
+        query += " order by last_changed desc;"
 
         result = self.__performQuery(query=query)
         vessels = []
         newTimestamp = None
         for x in result:
             vessel, t = self.__parseResult(x)
-            print(vessel)
             vessels.append(vessel)
             if newTimestamp == None:
                 newTimestamp = t
-        self.__timestamp = newTimestamp
+        if newTimestamp != None:
+            self.__timestamp = newTimestamp
         return vessels
 
     # Adds a new vessel into the database.
@@ -60,8 +61,8 @@ class Database:
             ) values
             ('
                 {name}', 
-                {lat:8.6f}, 
-                {long:9.6f}
+                {float(lat):8.6f}, 
+                {float(long):9.6f}
             );"""
         
         self.__performQuery(query=query, keepConnection=True)        
@@ -89,6 +90,7 @@ class Database:
             cursor.close()
         else:
             self.__closeConnection()
+            
         return result
 
     def __parseResult(self, result: tuple) -> tuple:
@@ -97,4 +99,3 @@ class Database:
 
 # Singleton object
 db = Database()
-

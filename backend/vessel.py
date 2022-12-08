@@ -23,6 +23,14 @@ class Vessel:
     def long(self) -> float:
         return self.__long
 
+    def toJson(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "lat": self.lat,
+            "long": self.long
+        }
+
     def __repr__(self) -> str:
         return f"{self.id} {self.name} {self.lat:8.6f} {self.long:9.6f}"
 
