@@ -1,36 +1,37 @@
 <template>
-  <div class="container">
-    <div class="row">
-      <div class="col-sm-10">
-        <h1>Vessels</h1>
-        <hr><br><br>
-        <button type="button" class="btn btn-success btn-sm" v-b-modal.vessel-modal>Add Vessel</button>
-        <br><br>
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Latitude</th>
-              <th scope="col">Longitude</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(vessel, index) in vessels" :key="index">
-              <td>{{ vessel.name }}</td>
-              <td>{{ vessel.lat }}</td>
-              <td>{{ vessel.long }}</td>
-              <td>
-                <div class="btn-group" role="group">
-                  <button type="button" class="btn btn-warning btn-sm" v-b-modal.book-update-modal
-        @click="editBook(book)">>Update</button>
-                  <button type="button" class="btn btn-danger btn-sm" @click="deleteVessel(vessel.id)">Delete</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+  <div class="wrapper">
+    <nav id="sidebar">
+      <div class="sidebar-header">
+        <h3>
+          Vessels 
+          <button type="button" class="btn btn-success btn-sm" v-b-modal.vessel-modal>Add</button>
+        </h3>
       </div>
+      <ul class="list-unstyled components">
+        <p>
+          Name | Latitude | Longitude
+        </p>
+        
+        <li v-for="(vessel, index) in vessels" :key="index">
+          <div>
+            {{ vessel.name }} | {{ vessel.lat }} | {{ vessel.long }}
+          </div>
+          <div class="btn-group" role="group">
+                <button 
+                  type="button" 
+                  class="btn btn-warning btn-sm" 
+                  v-b-modal.vessel-update-modal
+                  @click="editVessel(vessel)">
+                    Update
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" @click="deleteVessel(vessel.id)">Delete</button>
+          </div>
+          <hr/>
+        </li>
+      </ul>
+    </nav>
+    <div id="content">
+      <MapComponent :vessels="vessels" />
     </div>
     <b-modal ref="addVesselModal"
          id="vessel-modal"
@@ -87,7 +88,7 @@
                       label-for="form-name-edit-input">
           <b-form-input id="form-name-edit-input"
                         type="text"
-                        v-model="editForm.name"
+                        v-model="editVesselForm.name"
                         required
                         placeholder="Enter name">
           </b-form-input>
@@ -100,7 +101,7 @@
                         step="0.000001"
                         max="99.999999"
                         min="-99.999999"
-                        v-model="editForm.lat"
+                        v-model="editVesselForm.lat"
                         required
                         placeholder="Enter latitude">
           </b-form-input>
@@ -113,13 +114,13 @@
                         step="0.000001"
                         max="999.999999"
                         min="-999.999999"
-                        v-model="editForm.long"
+                        v-model="editVesselForm.long"
                         required
                         placeholder="Enter longtitude">
           </b-form-input>
         </b-form-group>
         <b-button-group>
-          <b-button type="submit" variant="primary">Update</b-button>
+          <b-button type="submit" variant="primary" >Update</b-button>
           <b-button type="reset" variant="danger">Cancel</b-button>
         </b-button-group>
       </b-form>
@@ -129,9 +130,13 @@
 
 <script>
 import axios from 'axios'
+import MapComponent  from '../components/MapComponent.vue';
 const path = 'http://localhost:5000/vessels/';
 export default {
   name: 'HomeView',
+  components: {
+    MapComponent
+  },
   data() {
     return {
       vessels: [],
@@ -140,7 +145,7 @@ export default {
         lat: '',
         long: ''
       },
-      editForm: {
+      editVesselForm: {
         id: '',
         name: '',
         lat: '',
@@ -153,7 +158,6 @@ export default {
       axios.get(path)
         .then((res) => {
           this.vessels = res.data.vessels;
-          console.log(this.vessels)
         })
         .catch((error) => {
           console.error(error);
@@ -177,15 +181,36 @@ export default {
         .then(this.onSuccess)
         .catch(this.onError);
     },
-    editVessel(payload, bookId){
+    updateVessel(payload, bookId){
       axios.put(path + `${bookId}`, payload)
       .then(this.onSuccess)
       .catch(this.onError)
     },
+    editVessel(vessel){
+      for(const key in vessel){
+        this.editVesselForm[key] = vessel[key]
+      }
+    },
     initForm() {
-      this.addVesselForm.name = '';
-      this.addVesselForm.lat = '';
-      this.addVesselForm.long = '';
+      for(const key in this.addVesselForm)
+        this.addVesselForm[key] = '';
+      for(const key in this.addVesselForm)
+        this.editVesselForm[key] = '';  
+    },
+    onSubmitUpdate(evt){
+      evt.preventDefault();
+      this.$refs.editVesselModal.hide();
+      const payload = {
+        name: this.editVesselForm.name,
+        lat: this.editVesselForm.lat,
+        long: this.editVesselForm.long
+      };
+      this.updateVessel(payload, this.editVesselForm.id);
+    },
+    onResetUpdate(evt) {
+      evt.preventDefault();
+      this.$refs.editVesselModal.hide();
+      this.initForm();
     },
     onSubmit(evt) {
       evt.preventDefault();
@@ -220,5 +245,9 @@ export default {
   color: #2c3e50;
   margin-top: 60px;
 }
-
+.wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+}
 </style>

@@ -2,10 +2,10 @@ import mysql.connector
 from mysql.connector import cursor
 from vessel import Vessel
 import dbConstants as constants
-from datetime import datetime
 
 class Database:
     def __init__(self) -> None:
+        # timestamp is used to select only unseen data from the database
         self.__timestamp = None
         self.__mydb = None
 
@@ -53,28 +53,32 @@ class Database:
 
     # Adds a new vessel into the database.
     def addVessel(self, name: str, lat: float, long: float):
+        name = name.strip().replace("\n", "")
         query = f"""insert into {constants.vesselsTable}
             (
                 {constants.vesselsNameColumn}, 
                 {constants.vesselsLatColumn}, 
                 {constants.vesselsLongColumn}
             ) values
-            ('
-                {name}', 
+            (
+                '{name}', 
                 {float(lat):8.6f}, 
                 {float(long):9.6f}
             );"""
         
         self.__performQuery(query=query, keepConnection=True)        
-            
+
+    # deletes the vesse with the given id from the database      
     def removeVessel(self, id: int):
         query = f"delete from {constants.vesselsTable} where {constants.vesselsIdColumn} = {id};"
         self.__performQuery(query=query, keepConnection=True)  
 
+    # edits vessel details in the database
     def editVessel(self, id: int, name: str, lat: float, long: float):
+        name = name.strip().replace("\n", "")
         query = f"""update {constants.vesselsTable} 
             set 
-                {constants.vesselsNameColumn} = {name}, 
+                {constants.vesselsNameColumn} = '{name}',
                 {constants.vesselsLatColumn} = {lat}, 
                 {constants.vesselsLongColumn} = {long} 
             where {constants.vesselsIdColumn} = {id};"""
@@ -83,7 +87,7 @@ class Database:
 
     def __performQuery(self, query: str, keepConnection = False):
         cursor = self.__openConnection()
-
+        print(query)
         cursor.execute(query)
         result = cursor.fetchall()
         if(keepConnection):

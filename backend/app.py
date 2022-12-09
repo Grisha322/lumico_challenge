@@ -17,7 +17,7 @@ def main():
 @app.post("/vessels/")
 def add_vessel():
     post_data = request.get_json()
-    server.addVessel(post_data.get('name'), post_data.get('lat'), post_data.get('long'))
+    server.addVessel(escape(post_data.get('name')), escape(post_data.get('lat')), escape(post_data.get('long')))
     return jsonify({
         'status': 'success'
     })
@@ -25,14 +25,14 @@ def add_vessel():
 @app.put("/vessels/<int:bookId>")
 def edit_vessel(bookId):
     post_data = request.get_json()
-    server.editVessel(bookId, post_data.get('name'), post_data.get('lat'), post_data.get('long'))
+    server.editVessel(escape(bookId), escape(post_data.get('name')), escape(post_data.get('lat')), escape(post_data.get('long')))
     return jsonify({
         'status': 'success'
     })  
 
 @app.delete("/vessels/<int:bookId>")
 def delete_vessel(bookId):
-    server.removeVessel(bookId)
+    server.removeVessel(escape(bookId))
     return jsonify({
         'status': 'success'
     })

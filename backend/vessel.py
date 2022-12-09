@@ -34,12 +34,12 @@ class Vessel:
     def __repr__(self) -> str:
         return f"{self.id} {self.name} {self.lat:8.6f} {self.long:9.6f}"
 
+    # hash and eq are redefined specifically to be used with hash set.
+    # vessels with any data, but with the same id are equal
     def __eq__(self, __o: object) -> bool:
         return (
             self.__class__ == __o.__class__ and
-            self.name == __o.name and
-            self.lat == __o.lat and
-            self.long == __o.long
+            self.id == __o.id
         )
 
     def __hash__(self) -> int:
